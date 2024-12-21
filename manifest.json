@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "BookUp",
+  "version": "1.0",
+  "description": "Actively backup your bookmarks",
+  "permissions": [
+    "bookmarks",
+    "downloads",
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
