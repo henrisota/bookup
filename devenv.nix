@@ -11,10 +11,25 @@ in {
 
   tasks = let
     web-ext = getExe pkgs.web-ext;
-  in {
-    "ext:lint".exec = "${web-ext} lint";
-    "ext:run".exec = "${web-ext} run";
-  };
+    webExtTasksList = [
+      {
+        name = "build";
+        args = ["--overwrite-dest"];
+      }
+      {
+        name = "lint";
+        args = [];
+      }
+      {
+        name = "run";
+        args = [];
+      }
+    ];
+    generateWebExtTask = task: {
+      "ext:${task.name}".exec = "${web-ext} ${task.name} ${builtins.concatStringsSep " " task.args}";
+    };
+  in
+    builtins.foldl' (acc: task: acc // generateWebExtTask task) {} webExtTasksList;
 
   pre-commit.hooks = {
     editorconfig-checker.enable = false;
