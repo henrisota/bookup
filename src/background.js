@@ -1,4 +1,4 @@
-async function bookUp() {
+async function bookUp(type) {
   let bookmarks;
   try {
     bookmarks = await browser.bookmarks.getTree();
@@ -15,19 +15,29 @@ async function bookUp() {
     return;
   }
 
+  const directory = type === 'periodic' ? 'periodic' : 'on_demand';
+
   let blob = new Blob([bookmarksJson], {type: 'application/json'});
   let url = URL.createObjectURL(blob);
 
   try {
     browser.downloads.download({
       url,
-      filename: 'bookmarks.json',
+      filename: [
+        getRootDirectory(),
+        directory.toString(),
+        new Date().toISOString().replaceAll(':', '-').slice(0, -5)
+      ].join('/'),
       conflictAction: 'overwrite',
       saveAs: false
     });
   } catch (error) {
     console.error('Failed to bookup into downloads directory')
   }
+}
+
+function getRootDirectory() {
+  return 'bookups';
 }
 
 browser.bookmarks.onCreated.addListener(bookUp);
@@ -48,6 +58,6 @@ browser.alarms.create('periodicBookUp', { periodInMinutes: 1 });
 browser.alarms.onAlarm.addListener((message) => {
   if (message.name === 'periodicBookUp') {
     console.info('Performing periodic bookup');
-    bookUp();
+    bookUp('periodic');
   }
 })
