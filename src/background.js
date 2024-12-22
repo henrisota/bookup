@@ -23,6 +23,12 @@ async function performBookUp(type) {
     console.error('Failed to manage bookups', error);
   }
 
+  const isDuplicate = await checkIfDuplicate(directory, bookUpJson);
+  if (isDuplicate) {
+    console.info('Found duplicate bookup. Skipping on performing bookup')
+    return;
+  }
+
   let blob = new Blob([bookUpJson], {type: 'application/json'});
   let url = URL.createObjectURL(blob);
 
@@ -75,6 +81,24 @@ async function manage(directory) {
       }
     }
   }
+}
+
+async function checkIfDuplicate(directory, newBookUpJson) {
+  const path = [getRootDirectory(), directory].join('/');
+
+  let bookUps;
+  bookUps = await browser.downloads.search({
+    query: [path],
+    orderBy: ['-startTime']
+  });
+
+  for (const bookUp of bookUps) {
+    if (bookUp.fileSize === newBookUpJson.length && bookUp.state === 'complete') {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getRootDirectory() {
