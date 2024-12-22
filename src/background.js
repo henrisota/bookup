@@ -3,7 +3,7 @@ async function bookUp(type) {
   try {
     bookmarks = await browser.bookmarks.getTree();
   } catch (error) {
-    console.error('Failed to fetch bookmarks')
+    console.error('Failed to fetch bookmarks', error)
     return;
   }
 
@@ -11,7 +11,7 @@ async function bookUp(type) {
   try {
     bookmarksJson = JSON.stringify(bookmarks, null, 2);
   } catch (error) {
-    console.error('Failed to convert bookmarks into json format')
+    console.error('Failed to convert bookmarks into json format', error)
     return;
   }
 
@@ -32,7 +32,7 @@ async function bookUp(type) {
       saveAs: false
     });
   } catch (error) {
-    console.error('Failed to bookup into downloads directory')
+    console.error('Failed to bookup into downloads directory', error)
   }
 }
 
