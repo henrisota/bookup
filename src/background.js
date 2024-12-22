@@ -1,17 +1,17 @@
-async function bookUp(type) {
-  let bookmarks;
+async function performBookUp(type) {
+  let bookUp;
   try {
-    bookmarks = await browser.bookmarks.getTree();
+    bookUp = await browser.bookmarks.getTree();
   } catch (error) {
-    console.error('Failed to fetch bookmarks', error)
+    console.error('Failed to fetch bookup', error)
     return;
   }
 
-  let bookmarksJson;
+  let bookUpJson;
   try {
-    bookmarksJson = JSON.stringify(bookmarks, null, 2);
+    bookUpJson = JSON.stringify(bookUp, null, 2);
   } catch (error) {
-    console.error('Failed to convert bookmarks into json format', error)
+    console.error('Failed to convert bookup into json format', error)
     return;
   }
 
@@ -20,10 +20,10 @@ async function bookUp(type) {
   try {
     manage(directory);
   } catch (error) {
-    console.error('Faield to manage bookups', error);
+    console.error('Failed to manage bookups', error);
   }
 
-  let blob = new Blob([bookmarksJson], {type: 'application/json'});
+  let blob = new Blob([bookUpJson], {type: 'application/json'});
   let url = URL.createObjectURL(blob);
 
   try {
@@ -38,7 +38,7 @@ async function bookUp(type) {
       saveAs: false
     });
   } catch (error) {
-    console.error('Failed to bookup into downloads directory', error)
+    console.error('Failed to save bookup', error)
   }
 }
 
@@ -85,17 +85,17 @@ function getMaxBookUps() {
   return 100;
 }
 
-browser.bookmarks.onCreated.addListener(bookUp);
-browser.bookmarks.onRemoved.addListener(bookUp);
-browser.bookmarks.onChanged.addListener(bookUp);
-browser.bookmarks.onMoved.addListener(bookUp);
-browser.runtime.onInstalled.addListener(bookUp);
-browser.runtime.onStartup.addListener(bookUp);
+browser.bookmarks.onCreated.addListener(performBookUp);
+browser.bookmarks.onRemoved.addListener(performBookUp);
+browser.bookmarks.onChanged.addListener(performBookUp);
+browser.bookmarks.onMoved.addListener(performBookUp);
+browser.runtime.onInstalled.addListener(performBookUp);
+browser.runtime.onStartup.addListener(performBookUp);
 
 browser.runtime.onMessage.addListener((message) => {
   if (message.command === 'bookUp') {
     console.info('Performing on-demand bookup');
-    bookUp();
+    performBookUp();
   }
 });
 
@@ -103,6 +103,6 @@ browser.alarms.create('periodicBookUp', { periodInMinutes: 1 });
 browser.alarms.onAlarm.addListener((message) => {
   if (message.name === 'periodicBookUp') {
     console.info('Performing periodic bookup');
-    bookUp('periodic');
+    performBookUp('periodic');
   }
 })
