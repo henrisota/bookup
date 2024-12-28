@@ -10,9 +10,16 @@
     "alarms"
   ],
   "background": {
-    "scripts": ["src/background.js"]
+    "scripts": [
+      "src/background.js"
+    ]
   },
   "action": {
     "default_popup": "popup.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "extension@bookup"
+    }
   }
 }
