@@ -8,5 +8,5 @@ devenv.local.nix
 # pre-commit
 .pre-commit-config.yaml
 
-# Web Extensions
-web-ext-artifacts
+# Build Artifacts
+artifacts

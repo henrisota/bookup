@@ -14,7 +14,11 @@ in {
     webExtTasksList = [
       {
         name = "build";
-        args = ["--overwrite-dest"];
+        args = [
+          "--artifacts-dir"
+          "artifacts"
+          "--overwrite-dest"
+        ];
       }
       {
         name = "lint";
