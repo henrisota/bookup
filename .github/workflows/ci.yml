@@ -20,15 +20,17 @@ jobs:
       - name: Update manifest version
         if: ${{ github.ref_type == 'tag' }}
         uses: cssnr/update-json-value-action@v1
+      - name: Install
+        run: devenv tasks run ext:install
       - name: Build
         run: devenv tasks run ext:build
-      - name: Lint
-        run: devenv tasks run ext:lint
+      - name: Zip
+        run: devenv tasks run ext:zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bookup-${{ github.sha }}
-          path: artifacts/*.zip
+          path: .output/*.zip
           retention-days: 7
           overwrite: true
       - name: Release
@@ -36,5 +38,5 @@ jobs:
         uses: ghalactic/github-release-from-tag@v5
         with:
           assets: |
-            - path: "artifacts/*.zip"
+            - path: ".output/*.zip"
           summaryEnabled: "false"

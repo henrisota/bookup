@@ -1,16 +1,12 @@
-export default class DownloadRepository {
+import { Download, DownloadMapper, File } from "@bookup";
+
+import { Downloads } from "webextension-polyfill";
+
+export class DownloadRepository {
   constructor() { }
 
-  async initialize() {
-    if (!this.DownloadMapper) {
-      this.DownloadMapper = (await import("./download-mapper.js")).default;
-    }
-  }
-
-  async getByPath(path) {
-    await this.initialize();
-
-    console.debug(`Triggered ${this.constructor.name} getBypath with path`, path);
+  async getByPath(path: string) {
+    console.debug(`Triggered ${this.constructor.name} getByPath with path`, path);
 
     const items = await browser.downloads.search({
       query: [path]
@@ -19,12 +15,10 @@ export default class DownloadRepository {
     return items
       .filter(item => item.filename.endsWith('.json'))
       .filter(item => item.state === 'complete')
-      .map(item => this.DownloadMapper.fromDownloadItem(item));
+      .map(item => DownloadMapper.fromDownloadItem(item));
   }
 
-  async create(file) {
-    await this.initialize();
-
+  async create(file: File): Promise<Download | null> {
     console.debug(`Triggered ${this.constructor.name} create with file`, file);
 
     const { path, content } = file;
@@ -39,18 +33,20 @@ export default class DownloadRepository {
         saveAs: false
       });
 
-      return this.DownloadMapper.fromDownloadItem(item);
+      return DownloadMapper.fromDownloadItem(item as unknown as Downloads.DownloadItem);
     } catch (error) {
       console.warn('Failed to create download', error);
+
+      return null;
     }
   }
 
-  async delete(download) {
+  async delete(download: Download): Promise<void> {
     console.debug(`Triggered ${this.constructor.name} delete with download`, download);
 
     try {
       await browser.downloads.removeFile(download.id);
-    } catch (error) {
+    } catch (error: any) {
       const message = error.message;
       if (!message.includes('file doesn\'t exist') &&
         !message.includes('remove incomplete download')) {
@@ -61,7 +57,7 @@ export default class DownloadRepository {
     try {
       console.info(`Deleting download ${download.name}`);
       await browser.downloads.erase({ id: download.id });
-    } catch (error) {
+    } catch (error: any) {
       console.warn(`Failed to delete download ${download.name}`, error);
     }
   }

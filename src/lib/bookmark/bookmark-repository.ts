@@ -1,8 +1,11 @@
-export default class BookmarkRepository {
+import { Bookmark } from "@bookup";
+import { Bookmarks } from "wxt/browser";
+
+export class BookmarkRepository {
   constructor() { }
 
-  async get() {
-    let bookmarks;
+  async get(): Promise<Bookmark | null> {
+    let bookmarks: Bookmarks.BookmarkTreeNode[] | null = null;
     try {
       bookmarks = await browser.bookmarks.getTree();
     } catch (error) {
@@ -10,7 +13,7 @@ export default class BookmarkRepository {
       return null;
     }
 
-    let content;
+    let content: string | null = null;
     try {
       content = JSON.stringify(bookmarks, null, 2);
     } catch (error) {
@@ -27,7 +30,7 @@ export default class BookmarkRepository {
     };
   }
 
-  async digest(content) {
+  async digest(content: string): Promise<string> {
     const data = new TextEncoder().encode(content);
     const hash = await window.crypto.subtle.digest('SHA-1', data);
     return Array
