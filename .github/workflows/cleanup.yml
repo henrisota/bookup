@@ -3,26 +3,52 @@ on:
   pull_request:
     types:
       - closed
+  workflow_dispatch:
+    inputs:
+      reference:
+        description: 'The reference to clean up caches for (e.g., refs/heads/branch-name, refs/tags/tag-name, refs/pull/PR-number/merge)'
+        required: true
+        default: ''
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Clean caches
+      - name: Determine reference
+        id: determine-reference
         run: |
-          echo "Fetching list of cache key"
-          cacheKeysForPR=$(gh cache list --ref "$BRANCH" --limit 100 --json id --jq '.[].id')
-
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            REFERENCE="${{ github.event.inputs.reference }}"
+          else
+            REFERENCE="refs/pull/${{ github.event.pull_request.number }}/merge"
+          fi
+          echo "reference=$REFERENCE" >> "$GITHUB_OUTPUT"
+      - name: Clean caches
+        id: clean-caches
+        run: |
           set +e
-          echo "Deleting caches..."
+          totalDeleted=0
 
-          for cacheKey in $cacheKeysForPR
-          do
-            gh cache delete "$cacheKey"
+          echo "Deleting caches for reference $REFERENCE"
+          while true; do
+            cacheKeys=$(gh cache list --ref "$REFERENCE" --limit 100 --json id --jq '.[].id')
+            numCacheKeys=$(echo "$cacheKeys" | wc -w)
+
+            if [[ "$numCacheKeys" -eq 0 ]]; then
+              echo "No more caches to delete"
+              break
+            fi
+
+            echo "Deleting $numCacheKeys caches..."
+            for cacheKey in $cacheKeys
+            do
+              gh cache delete "$cacheKey"
+              totalDeleted=$((totalDeleted + 1))
+            done
           done
 
-          echo "Done"
+          echo "Deleted $totalDeleted caches in total"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
+          REFERENCE: ${{ steps.determine-reference.outputs.reference }}
