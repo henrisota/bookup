@@ -8,35 +8,98 @@ on:
       - '*'
   pull_request:
 
+concurrency:
+  group: "ci"
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: devenv shell bash -- -e {0}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.create-artifact-name.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v26
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - name: Install devenv
-        run: nix profile install nixpkgs#devenv
-      - name: Update manifest version
-        if: ${{ github.ref_type == 'tag' }}
-        uses: cssnr/update-json-value-action@v1
+      - name: Prepare
+        uses: ./.github/actions/prepare
       - name: Install
-        run: devenv tasks run ext:install
+        run: ext:install
       - name: Build
-        run: devenv tasks run ext:build
+        run: ext:build
       - name: Zip
-        run: devenv tasks run ext:zip
+        run: ext:zip
+      - name: Create artifact name
+        id: create-artifact-name
+        run: echo "artifact-name=${{ github.sha }}" >> $GITHUB_OUTPUT
       - name: Upload artifacts
+        id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bookup-${{ github.sha }}
-          path: .output/*.zip
+          name: ${{ steps.create-artifact-name.outputs.artifact-name }}
+          path: .output/*-firefox.zip
+          include-hidden-files: true
           retention-days: 7
           overwrite: true
-      - name: Release
-        if: ${{ github.ref_type == 'tag' }}
-        uses: ghalactic/github-release-from-tag@v5
+
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate-version.outputs.version }}
+      valid: ${{ steps.validate-version.outputs.valid }}
+      changed: ${{ steps.check-version-change.outputs.changed }}
+      type: ${{ steps.check-version-change.outputs.type }}
+    steps:
+      - uses: actions/checkout@v4
         with:
-          assets: |
-            - path: ".output/*.zip"
-          summaryEnabled: "false"
+          fetch-depth: 0
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Validate version
+        id: validate-version
+        run: |
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+          SEMVER_OUTPUT=$(semver validate "$CURRENT_VERSION")
+          if [[ "$SEMVER_OUTPUT" == "valid" ]]; then
+            IS_VERSION_VALID=true
+          else
+            IS_VERSION_VALID=false
+          fi
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "valid=$IS_VERSION_VALID" >> $GITHUB_OUTPUT
+      - name: Check for version update
+        if: ${{ steps.validate-version.outputs.valid == 'true' }}
+        id: check-version-change
+        uses: EndBug/version-check@v2
+        with:
+          diff-search: true
+
+  release:
+    needs: [build, version]
+    if: ${{ (needs.version.outputs.valid == 'true') && (needs.version.outputs.changed == 'true') && contains(fromJSON('["major", "minor", "patch"]'), needs.version.outputs.type) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          merge-multiple: true
+      - name: Tag
+        if: ${{ contains(fromJSON('["major", "minor", "patch"]'), needs.version.outputs.type) }}
+        id: tag-version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          custom_tag: ${{ needs.version.outputs.version }}
+          tag_prefix: v
+          create_annotated_tag: true
+          commit_sha: ${{ github.sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.tag-version.outputs.new_tag }}
+          tag_name: ${{ steps.tag-version.outputs.new_tag }}
+          body: ${{ steps.tag-version.outputs.changelog }}
+          files: |
+            *-firefox.zip

@@ -1,15 +1,16 @@
 {pkgs, ...}: {
   packages = with pkgs; [
+    git
+    gnugrep
+    jq
     nodejs_22
+    semver-tool
   ];
 
-  languages = {
-    javascript.enable = true;
-    typescript.enable = true;
-  };
+  languages.typescript.enable = true;
 
-  tasks = let
-    tasksList = [
+  scripts = let
+    scriptsList = [
       rec {
         name = "build";
         command = "npm run ${name}";
@@ -27,11 +28,11 @@
         command = "npm run ${name}";
       }
     ];
-    generateTask = task: {
-      "ext:${task.name}".exec = task.command;
+    generateScript = script: {
+      "ext:${script.name}".exec = script.command;
     };
   in
-    builtins.foldl' (acc: task: acc // generateTask task) {} tasksList;
+    builtins.foldl' (acc: script: acc // generateScript script) {} scriptsList;
 
   pre-commit.hooks = {
     editorconfig-checker.enable = false;
@@ -46,8 +47,6 @@
           pkgs.alejandra
           pkgs.deadnix
           pkgs.statix
-
-          pkgs.prettierd
 
           pkgs.taplo
         ];
