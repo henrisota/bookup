@@ -1,31 +1,47 @@
-{pkgs, ...}: {
-  packages = with pkgs; [
-    git
-    gnugrep
-    jq
-    nodejs_22
-    semver-tool
-  ];
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  node = pkgs.nodejs_22;
+  npmExe = lib.getExe' node "npm";
+in {
+  packages =
+    [node]
+    ++ (with pkgs; [
+      git
+      gnugrep
+      jq
+      pre-commit
+      semver-tool
+    ]);
 
-  languages.typescript.enable = true;
+  languages = {
+    javascript.enable = true;
+    typescript.enable = true;
+  };
 
   scripts = let
-    scriptsList = [
+    scriptsList = with pkgs; [
       rec {
         name = "build";
-        command = "npm run ${name}";
+        command = "${npmExe} run ${name}";
       }
       rec {
         name = "install";
-        command = "npm ${name}";
+        command = "${npmExe} ${name}";
+      }
+      rec {
+        name = "lint";
+        command = "${lib.getExe pre-commit} run --all-files";
       }
       rec {
         name = "run";
-        command = "npm run ${name}";
+        command = "${npmExe} run ${name}";
       }
       rec {
         name = "zip";
-        command = "npm run ${name}";
+        command = "${npmExe} run ${name}";
       }
     ];
     generateScript = script: {
@@ -35,22 +51,28 @@
     builtins.foldl' (acc: script: acc // generateScript script) {} scriptsList;
 
   pre-commit.hooks = {
+    check-added-large-files.enable = true;
+    check-case-conflicts.enable = true;
+    check-merge-conflicts.enable = true;
+    check-json.enable = true;
+    check-yaml.enable = true;
     editorconfig-checker.enable = false;
+
     end-of-file-fixer.enable = true;
     trim-trailing-whitespace.enable = true;
 
-    treefmt = {
-      enable = true;
-      name = "formatter";
-      settings = {
-        formatters = [
-          pkgs.alejandra
-          pkgs.deadnix
-          pkgs.statix
+    actionlint.enable = true;
 
-          pkgs.taplo
-        ];
-      };
+    alejandra.enable = true;
+    deadnix = {
+      enable = true;
+      args = ["--edit"];
     };
+    statix = {
+      enable = true;
+      args = ["fix" "-i" ".devenv"];
+    };
+
+    typos.enable = true;
   };
 }
