@@ -20,8 +20,3 @@ priority = 1
 command = "taplo"
 options = ["fmt"]
 includes = ["*.toml"]
-
-[formatter.prettier]
-command = "prettier"
-includes = ["*.html", "*.js", "*.json", "*.md", "*.yaml"]
-excludes = [".pre-commit-config.yaml"]
