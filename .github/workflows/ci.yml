@@ -86,7 +86,6 @@ jobs:
           name: ${{ needs.build.outputs.artifact-name }}
           merge-multiple: true
       - name: Tag
-        if: ${{ contains(fromJSON('["major", "minor", "patch"]'), needs.version.outputs.type) }}
         id: tag-version
         uses: mathieudutour/github-tag-action@v6.2
         with:
