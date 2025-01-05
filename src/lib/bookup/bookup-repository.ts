@@ -63,7 +63,7 @@ export class BookUpRepository {
   }
 
   get rootDirectory(): string {
-    return 'bookups';
+    return import.meta.env.DEV ? 'bookups_development' : 'bookups';
   }
 
   get max(): number {
