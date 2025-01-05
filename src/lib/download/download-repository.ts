@@ -28,7 +28,7 @@ export class DownloadRepository {
     try {
       const item = await browser.downloads.download({
         url,
-        filename: path,
+        filename: [this.rootDirectory, path].join('/'),
         conflictAction: 'overwrite',
         saveAs: false
       });
@@ -60,5 +60,9 @@ export class DownloadRepository {
     } catch (error: any) {
       console.warn(`Failed to delete download ${download.name}`, error);
     }
+  }
+
+  get rootDirectory(): string {
+    return import.meta.env.DEV ? 'bookups_development' : 'bookups';
   }
 }

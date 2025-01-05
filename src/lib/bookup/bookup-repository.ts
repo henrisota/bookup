@@ -18,7 +18,7 @@ export class BookUpRepository {
     }
 
     const name = BookUpMapper.toDownloadName(bookUp);
-    const path = [this.path(bookUp.type), name].join('/');
+    const path = [this.typeToDirectory(bookUp.type), name].join('/');
 
     await this.downloadRepository.create({ path, content: bookUp.content ?? '' });
   }
@@ -26,7 +26,7 @@ export class BookUpRepository {
   async contains(bookUp: BookUp): Promise<boolean> {
     console.debug(`Triggered ${this.constructor.name} contains with type ${bookUp.type}`);
 
-    const downloads = await this.downloadRepository.getByPath(this.path(bookUp.type));
+    const downloads = await this.downloadRepository.getByPath(this.typeToDirectory(bookUp.type));
 
     const existingBookUps = downloads.map(download => BookUpMapper.fromDownload(download, bookUp.type));
 
@@ -40,7 +40,7 @@ export class BookUpRepository {
   async clean(type: BookUpType): Promise<void> {
     console.debug(`Triggered ${this.constructor.name} clean with type ${type}`);
 
-    const downloads = await this.downloadRepository.getByPath(this.path(type));
+    const downloads = await this.downloadRepository.getByPath(this.typeToDirectory(type));
 
     downloads.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
@@ -53,17 +53,8 @@ export class BookUpRepository {
     }
   }
 
-  path(type: BookUpType): string {
-    const directory = this.typeToDirectory(type);
-    return [this.rootDirectory, directory].join('/');
-  }
-
   typeToDirectory(type: BookUpType): string {
     return type === BookUpType.PERIODIC ? 'periodic' : 'on_demand';
-  }
-
-  get rootDirectory(): string {
-    return import.meta.env.DEV ? 'bookups_development' : 'bookups';
   }
 
   get max(): number {
