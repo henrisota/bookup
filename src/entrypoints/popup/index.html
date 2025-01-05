@@ -8,9 +8,13 @@
   <link rel="stylesheet" href="~/assets/main.css" />
 </head>
 
-<body>
-  <div id="app">
-    <button id="bookUp">BookUp</button>
+<body class="h-36 w-48 bg-white text-gray-500">
+  <div class="flex flex-col items-center justify-between h-screen p-4 space-y-2">
+    <img id="logo" class="w-10" />
+    <a id="bookUp"
+      class="rounded border border-current px-6 py-2 transition hover:scale-105 hover:shadow-xl focus:outline-none focus:ring active:text-gray-700">
+      Book Up
+    </a>
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
