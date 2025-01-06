@@ -1,9 +1,9 @@
-import { Download, DownloadMapper, File } from "@bookup";
+import { Configuration, ConfigurationKey, Download, DownloadMapper, File } from "@bookup";
 
 import { Downloads } from "webextension-polyfill";
 
 export class DownloadRepository {
-  constructor() { }
+  constructor(private readonly configuration: Configuration) { }
 
   async getByPath(path: string) {
     console.debug(`Triggered ${this.constructor.name} getByPath with path`, path);
@@ -25,10 +25,13 @@ export class DownloadRepository {
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
+    const rootDirectory = await this.configuration.getKey(ConfigurationKey.ROOT_DIRECTORY);
+    const filename = rootDirectory ? [rootDirectory, path].join('/') : path;
+
     try {
       const item = await browser.downloads.download({
         url,
-        filename: [this.rootDirectory, path].join('/'),
+        filename,
         conflictAction: 'overwrite',
         saveAs: false
       });
@@ -60,9 +63,5 @@ export class DownloadRepository {
     } catch (error: any) {
       console.warn(`Failed to delete download ${download.name}`, error);
     }
-  }
-
-  get rootDirectory(): string {
-    return import.meta.env.DEV ? 'bookups_development' : 'bookups';
   }
 }
