@@ -1,11 +1,4 @@
-import { BookUpDownloadTransformer } from "@bookup/transformers";
-import { BookUpRepository } from "@bookup/bookup/bookup-repository";
-import { BookUpService } from "@bookup/bookup/bookup-service";
-import { BookmarkRepository } from "@bookup/bookmark/bookmark-repository";
-import { Configuration } from "@bookup";
-import { DownloadRepository } from "@bookup/download/download-repository";
-import { OnDemandBookUpService } from "@bookup/bookup/on-demand-bookup-service";
-import { PeriodicBookUpService } from "@bookup/bookup/periodic-bookup-service";
+import { BookUpDownloadTransformer, BookUpRepository, BookUpService, BookmarkRepository, Configuration, DownloadRepository, OnDemandBookUpService, PeriodicBookUpService } from "@bookup";
 
 export default defineBackground({
   type: 'module',
