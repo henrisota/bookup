@@ -1,11 +1,10 @@
-import { BookUp, BookUpMapper, BookUpType, DownloadRepository } from "@bookup";
+import { BookUp, BookUpDownloadTransformer, BookUpType, DownloadRepository } from "@bookup";
 
 export class BookUpRepository {
-  private downloadRepository: DownloadRepository;
-
-  constructor(downloadRepository: DownloadRepository) {
-    this.downloadRepository = downloadRepository;
-  }
+  constructor(
+    private readonly bookupDownloadTransformer: BookUpDownloadTransformer,
+    private readonly downloadRepository: DownloadRepository
+  ) {}
 
   async create(bookUp: BookUp): Promise<void> {
     console.debug(`Triggered ${this.constructor.name} create with type ${bookUp.type}`);
@@ -17,18 +16,15 @@ export class BookUpRepository {
       return;
     }
 
-    const name = BookUpMapper.toDownloadName(bookUp);
-    const path = [this.typeToDirectory(bookUp.type), name].join('/');
-
-    await this.downloadRepository.create({ path, content: bookUp.content ?? '' });
+    await this.downloadRepository.create(this.bookupDownloadTransformer.toCreateDownloadCommand(bookUp));
   }
 
   async contains(bookUp: BookUp): Promise<boolean> {
     console.debug(`Triggered ${this.constructor.name} contains with type ${bookUp.type}`);
 
-    const downloads = await this.downloadRepository.getByPath(this.typeToDirectory(bookUp.type));
+    const downloads = await this.downloadRepository.getByPath(this.bookupDownloadTransformer.fromTypetoGetByPathQuery(bookUp.type));
 
-    const existingBookUps = downloads.map(download => BookUpMapper.fromDownload(download, bookUp.type));
+    const existingBookUps = downloads.map(download => this.bookupDownloadTransformer.fromDownload(download, bookUp.type));
 
     return Boolean(existingBookUps
       .find(existingBookUp =>
@@ -40,7 +36,7 @@ export class BookUpRepository {
   async clean(type: BookUpType): Promise<void> {
     console.debug(`Triggered ${this.constructor.name} clean with type ${type}`);
 
-    const downloads = await this.downloadRepository.getByPath(this.typeToDirectory(type));
+    const downloads = await this.downloadRepository.getByPath(this.bookupDownloadTransformer.fromTypetoGetByPathQuery(type));
 
     downloads.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
@@ -48,13 +44,9 @@ export class BookUpRepository {
       const downloadsToDelete = downloads.slice(this.max);
 
       for (const download of downloadsToDelete) {
-        await this.downloadRepository.delete(download);
+        await this.downloadRepository.delete({ download });
       }
     }
-  }
-
-  typeToDirectory(type: BookUpType): string {
-    return type === BookUpType.PERIODIC ? 'periodic' : 'on_demand';
   }
 
   get max(): number {

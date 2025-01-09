@@ -1,13 +1,14 @@
-import { Configuration, ConfigurationKey, Download, DownloadMapper, File } from "@bookup";
+import { Configuration, ConfigurationKey, CreateDownloadCommand, DeleteDownloadCommand, Download, DownloadMapper, GetByPathQuery } from "@bookup";
 
 import { Downloads } from "webextension-polyfill";
 
 export class DownloadRepository {
   constructor(private readonly configuration: Configuration) { }
 
-  async getByPath(path: string) {
-    console.debug(`Triggered ${this.constructor.name} getByPath with path`, path);
+  async getByPath(query: GetByPathQuery) {
+    console.debug(`Triggered ${this.constructor.name} getByPath with query`, query);
 
+    const { path } = query;
     const items = await browser.downloads.search({
       query: [path]
     });
@@ -18,10 +19,10 @@ export class DownloadRepository {
       .map(item => DownloadMapper.fromDownloadItem(item));
   }
 
-  async create(file: File): Promise<Download | null> {
-    console.debug(`Triggered ${this.constructor.name} create with file`, file);
+  async create(command: CreateDownloadCommand): Promise<Download | null> {
+    console.debug(`Triggered ${this.constructor.name} create with command`, command);
 
-    const { path, content } = file;
+    const { path, content } = command;
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -44,9 +45,10 @@ export class DownloadRepository {
     }
   }
 
-  async delete(download: Download): Promise<void> {
-    console.debug(`Triggered ${this.constructor.name} delete with download`, download);
+  async delete(command: DeleteDownloadCommand): Promise<void> {
+    console.debug(`Triggered ${this.constructor.name} delete with command`, command);
 
+    const { download } = command;
     try {
       await browser.downloads.removeFile(download.id);
     } catch (error: any) {
