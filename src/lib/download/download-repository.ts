@@ -1,43 +1,44 @@
-import { Configuration, ConfigurationKey, CreateDownloadCommand, DeleteDownloadCommand, Download, DownloadMapper, GetByPathQuery } from "@bookup";
+import { Configuration, ConfigurationKey, CreateDownloadCommand, DeleteDownloadCommand, Download, DownloadMapper, GetByPathQuery, SEPARATOR } from "@bookup";
 
 import { Downloads } from "webextension-polyfill";
 
 export class DownloadRepository {
   constructor(private readonly configuration: Configuration) { }
 
-  async getByPath(query: GetByPathQuery) {
+  async getByPath(query: GetByPathQuery): Promise<Download[]> {
     console.debug(`Triggered ${this.constructor.name} getByPath with query`, query);
 
-    const { path } = query;
-    const items = await browser.downloads.search({
-      query: [path]
-    });
-
-    return items
-      .filter(item => item.filename.endsWith('.json'))
-      .filter(item => item.state === 'complete')
-      .map(item => DownloadMapper.fromDownloadItem(item));
+    return this.search(query.path);
   }
 
   async create(command: CreateDownloadCommand): Promise<Download | null> {
     console.debug(`Triggered ${this.constructor.name} create with command`, command);
 
-    const { path, content } = command;
+    const { path: subPath, content } = command;
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
     const rootDirectory = await this.configuration.getKey(ConfigurationKey.ROOT_DIRECTORY);
-    const filename = rootDirectory ? [rootDirectory, path].join('/') : path;
+    const path = rootDirectory ? [rootDirectory, subPath].join(SEPARATOR) : subPath;
 
     try {
-      const item = await browser.downloads.download({
+      await browser.downloads.download({
         url,
-        filename,
+        filename: path,
         conflictAction: 'overwrite',
         saveAs: false
       });
 
-      return DownloadMapper.fromDownloadItem(item as unknown as Downloads.DownloadItem);
+      let download;
+      let attempts = 10;
+
+      do {
+        const downloads = await this.search(path, true);
+        download = downloads.at(0);
+        attempts -= 1;
+      } while (download && download.state === 'in_progress' && attempts >= 0);
+
+      return download ?? null;
     } catch (error) {
       console.warn('Failed to create download', error);
 
@@ -55,15 +56,26 @@ export class DownloadRepository {
       const message = error.message;
       if (!message.includes('file doesn\'t exist') &&
         !message.includes('remove incomplete download')) {
-        console.warn(`Failed to delete download file ${download.name}`, error);
+        console.warn(`Failed to delete download file ${download.path}`, error);
       }
     }
 
     try {
-      console.info(`Deleting download ${download.name}`);
+      console.info(`Deleting download ${download.path}`);
       await browser.downloads.erase({ id: download.id });
     } catch (error: any) {
-      console.warn(`Failed to delete download ${download.name}`, error);
+      console.warn(`Failed to delete download ${download.path}`, error);
     }
+  }
+
+  private async search(path: string, inProgress: boolean = false): Promise<Download[]> {
+    const items = await browser.downloads.search({
+      query: [path]
+    });
+
+    return items
+      .filter(item => item.filename.endsWith('.json'))
+      .filter(item => item.state === 'complete' || (inProgress ? item.state == 'in_progress' : false))
+      .map(item => DownloadMapper.fromDownloadItem(item));
   }
 }
