@@ -12,7 +12,7 @@ export class BookUpService {
   async bookUp(type: BookUpType) {
     console.debug(`Triggered ${this.constructor.name} with type ${type}`);
 
-    this.bookUpRepository.clean(type);
+    await this.bookUpRepository.clean(type);
 
     const bookmark = await this.bookmarkRepository.get();
     if (!bookmark) {
@@ -21,6 +21,6 @@ export class BookUpService {
 
     const bookUp = BookUpMapper.fromBookmark(bookmark, type);
 
-    this.bookUpRepository.create(bookUp);
+    await this.bookUpRepository.create(bookUp);
   }
 }
