@@ -1,8 +1,12 @@
+export type State = 'in_progress' | 'interrupted' | 'complete';
+
 export interface Download {
   id: number
   name: string
+  path: string
   size: number
   startTime: string
+  state: State
 }
 
 export interface CreateDownloadCommand {

@@ -4,3 +4,4 @@ export * from './configuration';
 export * from './download';
 export * from './models';
 export * from './transformers';
+export * from './utilities';

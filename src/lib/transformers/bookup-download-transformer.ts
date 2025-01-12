@@ -1,17 +1,16 @@
-import { BookUp, BookUpType, CreateDownloadCommand, Download, GetByPathQuery } from "@bookup";
+import { BookUp, BookUpType, CreateDownloadCommand, Download, GetByPathQuery, SEPARATOR } from "@bookup";
 
 export class BookUpDownloadTransformer {
   fromDownload(download: Download, type: BookUpType): BookUp {
-    const nameSeparatorIndex = download.name.lastIndexOf('/');
     return {
-      ...this.fromDownloadName(download.name.substring(nameSeparatorIndex + 1)),
+      ...this.fromDownloadName(download.name),
       type,
       size: download.size
     };
   }
 
   toCreateDownloadCommand(bookUp: BookUp): CreateDownloadCommand {
-    const path = [this.fromTypeToDirectory(bookUp.type), this.toDownloadName(bookUp)].join('/');
+    const path = [this.fromTypeToDirectory(bookUp.type), this.toDownloadName(bookUp)].join(SEPARATOR);
 
     return { path, content: bookUp.content ?? '' };
   }
