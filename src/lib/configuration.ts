@@ -37,4 +37,9 @@ export class Configuration {
     const storageKey = `local:${key}` as StorageItemKey;
     return storage.getItem<ExtensionConfiguration[K]>(storageKey);
   }
+
+  async setKey<K extends keyof ExtensionConfiguration>(key: K, value: ExtensionConfiguration[K]): Promise<void> {
+    const storageKey = `local:${key}` as StorageItemKey;
+    return storage.setItem<ExtensionConfiguration[K]>(storageKey, value);
+  }
 }
