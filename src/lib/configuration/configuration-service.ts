@@ -1,14 +1,7 @@
+import { Configuration, ConfigurationKey } from '@bookup';
 import { StorageItemKey, WxtStorageItem, storage } from '@wxt-dev/storage';
 
-export enum ConfigurationKey {
-  ROOT_DIRECTORY = 'rootDirectory'
-}
-
-export interface ExtensionConfiguration {
-  [ConfigurationKey.ROOT_DIRECTORY]: string;
-}
-
-export class Configuration {
+export class ConfigurationService {
   private rootDirectory: WxtStorageItem<string, {}>;
 
   constructor() {
@@ -19,9 +12,9 @@ export class Configuration {
     });
   }
 
-  async get(): Promise<ExtensionConfiguration> {
+  async get(): Promise<Configuration> {
     const items = await storage.getItems(Object.values(ConfigurationKey).map(key => `local:${key}` as StorageItemKey));
-    const configuration: Partial<ExtensionConfiguration> = {};
+    const configuration: Partial<Configuration> = {};
 
     items.forEach(item => {
       const key = item.key.replace('local:', '') as ConfigurationKey;
@@ -30,16 +23,16 @@ export class Configuration {
       }
     });
 
-    return configuration as ExtensionConfiguration;
+    return configuration as Configuration;
   }
 
-  async getKey<K extends keyof ExtensionConfiguration>(key: K): Promise<ExtensionConfiguration[K] | null> {
+  async getKey<K extends keyof Configuration>(key: K): Promise<Configuration[K] | null> {
     const storageKey = `local:${key}` as StorageItemKey;
-    return storage.getItem<ExtensionConfiguration[K]>(storageKey);
+    return storage.getItem<Configuration[K]>(storageKey);
   }
 
-  async setKey<K extends keyof ExtensionConfiguration>(key: K, value: ExtensionConfiguration[K]): Promise<void> {
+  async setKey<K extends keyof Configuration>(key: K, value: Configuration[K]): Promise<void> {
     const storageKey = `local:${key}` as StorageItemKey;
-    return storage.setItem<ExtensionConfiguration[K]>(storageKey, value);
+    return storage.setItem<Configuration[K]>(storageKey, value);
   }
 }

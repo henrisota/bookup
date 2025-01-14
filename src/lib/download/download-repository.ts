@@ -1,9 +1,7 @@
-import { Configuration, ConfigurationKey, CreateDownloadCommand, DeleteDownloadCommand, Download, DownloadMapper, GetByPathQuery, SEPARATOR } from "@bookup";
-
-import { Downloads } from "webextension-polyfill";
+import { ConfigurationKey, ConfigurationService, CreateDownloadCommand, DeleteDownloadCommand, Download, DownloadMapper, GetByPathQuery, SEPARATOR } from "@bookup";
 
 export class DownloadRepository {
-  constructor(private readonly configuration: Configuration) { }
+  constructor(private readonly configuration: ConfigurationService) { }
 
   async getByPath(query: GetByPathQuery): Promise<Download[]> {
     console.debug(`Triggered ${this.constructor.name} getByPath with query`, query);
