@@ -1,27 +1,27 @@
-import { Configuration, ConfigurationKey } from '@bookup';
+import { ConfigurationKey, ConfigurationService } from '@bookup';
 
 import logo from '@/assets/logo.svg';
 
 async function main() {
-  const configuration = new Configuration();
-  const extensionConfiguration = await configuration.get();
+  const configurationService = new ConfigurationService();
+  const configuration = await configurationService.get();
 
   const rootDirectory = document.querySelector<HTMLInputElement>('#rootDirectory');
   const setRootDirectoryButton = document.getElementById('setRootDirectoryButton');
 
   document.querySelector<HTMLImageElement>('#logo')!.src = logo;
 
-  rootDirectory!.value = extensionConfiguration[ConfigurationKey.ROOT_DIRECTORY];
+  rootDirectory!.value = configuration[ConfigurationKey.ROOT_DIRECTORY];
   setRootDirectoryButton?.addEventListener('click', async (_event: HTMLElementEventMap['click']) => {
     const newRootDirectory = rootDirectory!.value.trim();
-    const currentRootDirectory = await configuration.getKey(ConfigurationKey.ROOT_DIRECTORY);
+    const currentRootDirectory = await configurationService.getKey(ConfigurationKey.ROOT_DIRECTORY);
 
     if (newRootDirectory === currentRootDirectory) {
       console.debug('Skipping on setting new root directory as it matches current configuration root directory');
       return;
     }
 
-    await configuration.setKey(ConfigurationKey.ROOT_DIRECTORY, newRootDirectory);
+    await configurationService.setKey(ConfigurationKey.ROOT_DIRECTORY, newRootDirectory);
 
     console.debug(`Set configuration root directory to ${newRootDirectory}`);
   });
