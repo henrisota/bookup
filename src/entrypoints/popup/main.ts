@@ -7,7 +7,7 @@ async function main() {
   const extensionConfiguration = await configuration.get();
 
   document.querySelector<HTMLImageElement>('#logo')!.src = logo;
-  document.querySelector<HTMLParagraphElement>('#rootDirectory')!.textContent = extensionConfiguration[ConfigurationKey.ROOT_DIRECTORY];
+  document.querySelector<HTMLInputElement>('#rootDirectory')!.value = extensionConfiguration[ConfigurationKey.ROOT_DIRECTORY];
 
   document.getElementById('bookUp')?.addEventListener('click', () => {
     browser.runtime.sendMessage({command: 'bookUp'});
