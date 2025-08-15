@@ -50,7 +50,7 @@ in {
   in
     builtins.foldl' (acc: script: acc // generateScript script) {} scriptsList;
 
-  pre-commit.hooks = {
+  git-hooks.hooks = {
     check-added-large-files.enable = true;
     check-case-conflicts.enable = true;
     check-merge-conflicts.enable = true;
